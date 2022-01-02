@@ -1,0 +1,89 @@
+{% extends 'base.html' %} {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" type="text/css" />
+{% endblock %} {% block body %}
+
+<div class="banner">
+  <div class="banner-text">Planning Offshore Wind Logistics</div>
+  <a href='{{ url_for("map_link")}}'>
+    <button type="button" id="banner-btn">Start Analysis</button>
+  </a>
+</div>
+
+<div class="row">
+  <div class="text-center col-md-6">
+    <div class="column-text">
+      <h4>About the project</h4>
+      <br />
+      <p>
+        The aim of the project is to assist logistics planning decision making process
+        in the early conceptual phase of building offshore wind farms to optimize OPEX with Visual Analytics. 
+        Users can carry out spatial analysis by measuring distance between O&M harbor and site, and users have to provide their inputs 
+        for the system to run accessibility modelling.
+        The outcome of the analysis would be to suggest a vessel - between CTV, SOV, and Helicopter.
+        based on CTV acceessibility and other user inputs. 
+      </p>
+    </div>
+  </div>
+  <div class="text-center col-md-6">
+    <div class="column-text">
+      <!-- <img src="/static/img/wind.png" width="75px" height="75px" alt=""> -->
+      <h4>O&M in Offshore Wind</h4>
+      <br />
+      <p>
+        Offshore wind energy is a clean and renewable energy obtained by taking advantage of the
+        force of the wind that is produced on the high seas, where it reaches a higher and more
+        constant speed than on land due to the absence of barriers. In order to make the most of
+        this resource, mega-structures are installed that are seated on the seabed and equipped with
+        the latest technical innovations. Offshore wind power provided 0.3% of global electricity
+        supply in 2018, but the market has grown by almost 30% per year since 2010, second only to
+        solar.
+      </p>
+      <!-- <p>
+        Wind power is the most efficient technology to produce energy in a safe and environmentally
+        sustainable manner: it has zero emissions, local, inexhaustible, competitive and it creates
+        wealth and jobs.
+      </p> -->
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="text-center col-md-6">
+    <div class="column-text">
+      <!-- <img src="/static/img/contact.png" width="75px" height="75px" alt="" /> -->
+      <h4>About me</h4>
+      <br />
+      <p>
+        I am Min Cho Dorland, master student of Software Design at IT University of Copenhagen 
+        with a specialization in Data Analytics and work at PEAK Wind as O&M consultant.
+        This application is part of the thesis. I apply my knowledge within Visual Analytics and web programming 
+        to develop a practical tool needed in the Offshore Wind O&M domain. 
+      </p>
+      <p>
+        <div id="profile">
+          <img src="/static/img/thumbnail.jpg" class="img-contact" alt="" />
+          <div id="name_min">Min Cho Dorland</div>
+          <a href="mailto:minkyung@dorland.dk" class="fa fa-google fa-2x"></a>
+          <a href="https://www.linkedin.com/in/mindorland/" class="fa fa-linkedin fa-2x"></a>
+        </div>
+      </p>
+    </div>
+  </div>
+  <div class="text-center col-md-6">
+    <div class="column-text">
+      <!-- <img src="/static/img/tools.png" width="75px" height="75px" alt="" /> -->
+      <h4>Software & tools</h4>
+      <br />
+      <p>
+        Python and Pandas are used in the data extraction, preprocessing, and data modelling part
+        of this project. HTML, CSS and Javascript with MapbosGL JS framework & Turf JS were used to 
+        create the visual part of the application and spatial analysis. Javascript is also
+        used to implement simpler deterministic decision-tree logics. 
+        As template engine for the project, Flask, Python web programming framework was used.
+      </p>
+    </div>
+  </div>
+</div>
+
+<footer>© 2021 Planning Offshore Wind Logistics</footer>
+
+{% endblock %}

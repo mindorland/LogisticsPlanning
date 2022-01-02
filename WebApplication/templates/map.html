@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+{% block head %}
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.css" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="https://kit.fontawesome.com/2095c842ff.js" crossorigin="anonymous"></script>
+<!-- Mapbox geocoder -->
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+<link
+  rel="stylesheet"
+  href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css"
+  type="text/css"
+/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/map.css') }}" type="text/css">
+{% endblock %}
+{% block body %}
+<!-- for advanced geospatial analysis i.e., distance, and drawing -->
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+<!-- header -->
+<div id="header">
+  <div id="geocoder" class="geocoder"></div>
+  <i class="fas fa-sync-alt" onClick="window.location.reload()" id="refresh_btn"></i>
+</div>
+<pre id="coordinatesSite"></pre>
+<pre id="coordinatesHarbour"></pre>
+<nav id="menu"></nav>
+<nav id="menu2"></nav>
+<!-- map -->
+<div id="map">
+  <!-- Side control bar composed of content and toggle button-->
+  <div id="right" class="sidebar flex-center right collapsed">
+    <div class="sidebar-content rounded-rect flex-center">
+      <div class="missions_wrapper">
+        <ul>
+          <li>
+            <p id="counter">Mark once task is completed.</p>
+          </li>
+          <li>
+            <i class="far fa-square list-item" id="btn1"></i>
+            <div class="mission-container">
+              <h3 class="list-title">
+                No. of turbines
+                <sup>
+                  <i class="fas fa-info-circle" id="tooltip">
+                    <span id="tooltip-text">
+                      For larger windfarms, more visits to windfarms, technicians and equipment/component shall be on board. 
+                  </i>
+                </sup>
+              </h3>
+              <h4 class="mission_description">Select between 10 and 100 WTGs.</h4>
+              <form>
+                <input type="number" min="0" max="100" id="number_range" style="font-size:20px;">
+                <p class="sliders-bottom"><span id="wtg_output"></span> WTGs are selected.</p>
+              </form>
+            </div>
+          </li>
+          <li>
+            <i class="far fa-square list-item" id="btn2"></i>
+            <div class="mission-container">
+              <h3 class="list-title">
+                Potential site
+                <sup>
+                  <i class="fas fa-info-circle" id="tooltip">
+                    <span id="tooltip-text">
+                      Site location tells if there is a harbor nearby and vessels can access. 
+                  </i>
+                </sup>
+              </h3>
+              <button class="action_btn" type="button" id="sUndoBtn">
+                RELOCATE <i class="fas fa-undo-alt" id="sUndo"></i>
+              </button>
+              <h4 class="mission_description">Move around the wind farm icon.</h4>
+            </div>
+          </li>
+          <li>
+            <i class="far fa-square list-item" id="btn3"></i>
+            <div class="mission-container">
+              <h3 class="list-title">
+                O&M harbour
+                <sup>
+                  <i class="fas fa-info-circle" id="tooltip">
+                    <span id="tooltip-text">
+                      See <span style="color:#56414f">the O&M harbour markers</span> for more information.
+                  </i>
+                </sup>
+              </h3>
+              <button class="action_btn" type="button" id="hUndoBtn">
+                RELOCATE <i class="fas fa-undo-alt" id="hUndo"></i>
+              </button>
+              <h4 class="mission_description">Move around the harbour icon.</h4>
+            </div>
+          </li>
+          <li>
+            <i class="far fa-square list-item" id="btn4"></i>
+            <div class="mission-container">
+              <h3 class="list-title">
+                Sailing route (harbour ↔ site)
+                <sup>
+                  <i class="fas fa-info-circle" id="tooltip">
+                    <span id="tooltip-text2">
+                      It is relevant with CTV set up. Productive time technicians perform the maintenance work is reduced in case of too long transit.
+                  </i>
+                </sup>
+              </h3>
+              <button class="action_btn" type="button" id="dUndoBtn">
+                RESTART <i class="fas fa-undo-alt" id="dUndo"></i>
+              </button>
+              <h4 class="mission_description">
+                Draw a route by clicking on the map. <br />
+                You may undo by clicking a circle or <br />
+                clicking the button to the right.
+              </h4>
+              <div id="distance_value"></div>
+            </div>
+          </li>
+          <!-- <li>
+            <i class="far fa-square list-item" id="btn5"></i>
+            <div class="mission-container">
+              <h3 class="list-title">
+                Select a preferred logistics.
+                <sup>
+                  <i class="fas fa-info-circle" id="tooltip">
+                    <span id="tooltip-text2">
+                      For inspection and light repair, CTVs are the most popular.
+                      Only a few large windfarms hire SOVs.Helicopters are chartered for otherwise inaccessible sea conditions.
+                  </i>
+                </sup>
+              </h3>
+              <h4 class="mission_description">
+                Select either CTV, SOV, or helicopter.</h4>
+              <table class="img_table">
+                <thead>
+                  <tr>
+                    <td>
+                      <img class="vessel_images" src="../static/img/Crew transfer vessel.svg" alt="ctv" id="ctv" onclick="expand(this)"/>
+                    </td>
+                    <td>
+                      <img
+                        class="vessel_images"
+                        src="../static/img/Service operations vehicle.svg"
+                        alt="sov"
+                        id="sov"
+                      />
+                    </td>
+                    <td><img class="vessel_images" src="../static/img/Helicopter.svg" alt="heli" id="heli" /></td>
+                  </tr>
+                </thead>
+              </table>
+            </div>
+          </li> -->
+          <li>
+            <div class="btn_container">
+              <!-- <a href='{{ url_for("result") }}'> -->
+                <button
+                  class="result_btn"
+                  type="button"
+                  data-toggle="modal"
+                  data-target=".bd-example-modal-lg"
+                  onclick="return sendSiteLocation()"
+                  >
+                  MAKE ANALYSIS
+                </button>    
+              <!-- </a> -->
+
+            </div>
+          </li>
+          <!-- <div class="btn_container">
+            <a href="{{ url_for('result') }}">
+              <button
+                class="result_btn"
+                type="button"
+                data-toggle="modal"
+                data-target=".bd-example-modal-lg"
+                onclick="return sendSiteLocation()"
+              >
+                MAKE ANALYSIS
+              </button>              
+            </a> -->
+            <!-- <div class="modal fade bd-example-modal-lg" id="large_modal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                  Large modal
+                  Result to be shown here
+
+                  Wait for that. 
+                </div>
+              </div>
+            </div> -->
+          </ul>
+        </div>
+      <div class="sidebar-toggle rounded-rect right" onclick="toggleSidebar('right')">
+        <!-- &larr; -->
+        <i class="fas fa-chevron-left"></i>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade bd-example-modal-lg" id="large_modal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Analysis Results</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <span class="warning_text"></span>
+        <span id="recommended_text"></span>
+        <div class="text-center" id="loading_indicator">
+          <div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+        </div>
+        <p id="workinghour_text"></p>
+        <div id="workinghour_plot"></div>
+        <p id="results_text"></p>
+        <div id="accessibility_plot"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save results</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="distance" class="distance-container"></div>
+<script>
+  mapboxgl.accessToken =
+    "pk.eyJ1IjoibWlua2Nobzg4IiwiYSI6ImNrank5NGVxcTB6cnkybmxzcXpidXlpcXcifQ.OnBWChCvFY4S-dEsc1KUkA"
+  const map = new mapboxgl.Map({
+    container: "map", // container ID
+    style: "mapbox://styles/mapbox/light-v10", // style URL
+    center: [12.7, 55.67], // starting position [lng, lat]
+    zoom: 11, // starting zoom
+  })
+
+
+  // Add zoom and rotation controls to the map.
+  const nav = new mapboxgl.NavigationControl();
+  map.addControl(nav, 'top-left');
+
+  map.on('load', function() {
+  // get all the road layers in our style
+    var roadLayers = map.getStyle().layers.filter(function(layer) {
+      // filter out the road label layer
+      return layer.id.indexOf('road-') > -1 && layer.id !== 'road-label';
+    });
+    // remove all road related labels
+    roadLayers.forEach(function(layer) {
+      map.setLayoutProperty(layer.id, 'visibility', 'none');
+    });
+
+    var tunnelLayers = map.getStyle().layers.filter(function(layer) {
+      // filter out the road label layer
+      return layer.id.indexOf('tunnel-') > -1 && layer.id !== 'tunnel-label';
+    });
+
+    tunnelLayers.forEach(function(layer) {
+      map.setLayoutProperty(layer.id, 'visibility', 'none');
+    });
+
+    var landuseLayers = map.getStyle().layers.filter(function(layer) {
+      // filter out the road label layer
+      return layer.id.indexOf('landuse') > -1 && layer.id !== 'landuse-label';
+    });
+
+    landuseLayers.forEach(function(layer) {
+      map.setLayoutProperty(layer.id, 'visibility', 'none');
+    });
+
+    var bridgeLayers = map.getStyle().layers.filter(function(layer) {
+      // filter out the road label layer
+      return layer.id.indexOf('bridge-') > -1 && layer.id !== 'bridge-label';
+    });
+
+    bridgeLayers.forEach(function(layer) {
+      map.setLayoutProperty(layer.id, 'visibility', 'none');
+    });
+
+    var hillLayers = map.getStyle().layers.filter(function(layer) {
+      // filter out the road label layer
+      return layer.id.indexOf('hill') > -1 && layer.id !== 'hill-label';
+    });
+
+    hillLayers.forEach(function(layer) {
+      map.setLayoutProperty(layer.id, 'visibility', 'none');
+    });
+
+    var settlementLayers = map.getStyle().layers.filter(function(layer) {
+      // filter out the road label layer
+      return layer.id.indexOf('settlement-') > -1 && layer.id !== 'settlement-label';
+    });
+
+    settlementLayers.forEach(function(layer) {
+      map.setLayoutProperty(layer.id, 'visibility', 'none');
+    });
+
+    var poiLayers = map.getStyle().layers.filter(function(layer) {
+      // filter out the road label layer
+      return layer.id.indexOf('poi') > -1 && layer.id !== 'settlement-label';
+    });
+
+    settlementLayers.forEach(function(layer) {
+      map.setLayoutProperty(layer.id, 'visibility', 'none');
+    });
+
+    var naturalLayers = map.getStyle().layers.filter(function(layer) {
+      // filter out the road label layer
+      return layer.id.indexOf('natural') > -1 && layer.id !== 'natural-label';
+    });
+
+    naturalLayers.forEach(function(layer) {
+      map.setLayoutProperty(layer.id, 'visibility', 'none');
+    });
+})
+
+</script>
+<script src="{{ url_for('static', filename='javascript/map.js') }}"></script>
+<script src="{{ url_for('static', filename='javascript/sidebar.js') }}"></script>
+<script src="{{ url_for('static', filename='javascript/geocoder.js') }}"></script>
+<script src="{{ url_for('static', filename='javascript/geocoder.js') }}"></script>
+<script src="{{ url_for('static', filename='javascript/markers.js') }}"></script>
+<script src="{{ url_for('static', filename='javascript/sidebar.js') }}"></script>
+<script src="{{ url_for('static', filename='javascript/buttons.js') }}"></script>
+<script src="{{ url_for('static', filename='javascript/connect.js') }}"></script>
+<script src="https://cdn.plot.ly/plotly-2.6.3.min.js"></script>
+<script>
+  function clickEvent(){
+    href="{{ url_for('result') }}"
+    return sendSiteLocation()
+  }
+</script>
+{% endblock %}
